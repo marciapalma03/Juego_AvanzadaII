@@ -4,10 +4,11 @@ import random
 import math
 import os
 
+# Inicializar pygame y mixer
 pygame.init()
 pygame.mixer.init()
 pygame.mixer.music.load('musicainicio.mp3')
-pygame.mixer.music.play(-1)
+pygame.mixer.music.play(-1)  # -1 significa que se repite en bucle
 try:
     sonido_seleccion = pygame.mixer.Sound('Sonidoseleccionpersonaje.mp3')
 except:
@@ -18,6 +19,7 @@ WIDTH, HEIGHT = 900, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("THE LEGACY OF THE MIST")
 
+# ----------- COLORES OSCUROS -----------
 DARK_BG = (25, 25, 32)
 DARKER_BG = (16, 16, 24)
 DARK_BTN = (44, 44, 56)
@@ -69,7 +71,7 @@ def draw_fog(surface, camera_x=0):
             fog_particles[i][4] = random.randint(60, 110)
 
 class AnimatedButton:
-    def _init_(self, rect, text, font, sonido=True):
+    def __init__(self, rect, text, font, sonido=True):
         self.base_rect = pygame.Rect(rect)
         self.rect = pygame.Rect(rect)
         self.text = text
@@ -80,4 +82,44 @@ class AnimatedButton:
         self.current_color = self.base_color
         self.hovered = False
         self.clicked = False
-        self.sonido = sonido
+        self.sonido = sonido  # ← NUEVO
+
+    def draw(self, surface):
+        scale = 1.07 if self.hovered else 1.0
+        if self.clicked:
+            scale = 1.15
+        new_width = int(self.base_rect.width * scale)
+        new_height = int(self.base_rect.height * scale)
+        self.rect.width = new_width
+        self.rect.height = new_height
+        self.rect.center = self.base_rect.center
+
+        if self.hovered:
+            glow = pygame.Surface((self.rect.width + 20, self.rect.height + 20), pygame.SRCALPHA)
+            pygame.draw.ellipse(glow, (180, 180, 250, 60), glow.get_rect())
+            surface.blit(glow, (self.rect.x - 10, self.rect.y - 10))
+
+        color = self.current_color
+        if self.hovered:
+            brightness = 10 + int(15 * math.sin(pygame.time.get_ticks() * 0.005))
+            color = (
+                min(self.hover_color[0] + brightness, 255),
+                min(self.hover_color[1] + brightness, 255),
+                min(self.hover_color[2] + brightness, 255),
+            )
+        if self.clicked:
+            color = self.click_color
+
+        pygame.draw.rect(surface, color, self.rect, border_radius=16)
+        if self.hovered:
+            pygame.draw.rect(surface, (200, 200, 200, 100), self.rect, 3, border_radius=16)
+            for _ in range(3):
+                px = random.randint(self.rect.left, self.rect.right)
+                py = random.randint(self.rect.top, self.rect.bottom)
+                pygame.draw.circle(surface, (240, 240, 255), (px, py), 1)
+
+        text_surf = self.font.render(self.text, True, BLACK if self.clicked else WHITE)
+        surface.blit(
+            text_surf,
+            (self.rect.centerx - text_surf.get_width() // 2, self.rect.centery - text_surf.get_height() // 2)
+        )
