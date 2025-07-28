@@ -34,16 +34,13 @@ while True:
 
         if state == "MENU":
             menu.handle_event(event)
-
             if menu.btn_personajes.clicked:
                 state = "PERSONAJES"
                 pygame.mixer.music.set_volume(0.18)
                 menu.btn_personajes.clicked = False
-
             if menu.btn_salir.clicked:
                 pygame.quit()
                 sys.exit()
-
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 if selected_character_sprite:
                     state = "NIVEL1"
@@ -51,7 +48,6 @@ while True:
 
         elif state == "PERSONAJES":
             personajes_screen.handle_event(event)
-
             if personajes_screen.selected_index is not None:
                 selected_character = personajes_screen.characters[personajes_screen.selected_index]
                 selected_character_sprite = selected_character["sprite"]
