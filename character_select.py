@@ -103,8 +103,10 @@ class CharacterSelectScreen:
         self.close_btn = None
         self.select_btn = None
 
+        # -------- NUEVO: para guardar el personaje elegido --------
+        self.selected_character = None
+
     def calculate_positions_horizontal_centered(self, size, num_sprites, y_center, screen_width, separation=-70):
-        # size: (ancho, alto)
         w, h = size
         total_width = num_sprites * w + (num_sprites - 1) * separation
         start_x = (screen_width - total_width) // 2
@@ -126,6 +128,7 @@ class CharacterSelectScreen:
             rect = pygame.Rect(x, y, *TARGET_SIZE)
             if rect.collidepoint(mouse_pos):
                 self.hover_index = idx
+
         # Popup buttons
         if self.selected_index is not None:
             box_w, box_h = 560, 340
@@ -156,6 +159,8 @@ class CharacterSelectScreen:
                 self.close_btn.clicked = False
             elif self.select_btn.clicked:
                 print("Seleccionaste el personaje:", self.characters[self.selected_index]["name"])
+                # -------- NUEVO: guardar personaje elegido --------
+                self.selected_character = self.characters[self.selected_index]["name"]
                 self.selected_index = None
                 self.select_btn.clicked = False
         else:
@@ -201,10 +206,8 @@ class CharacterSelectScreen:
         # Nombre y descripción
         font_title = pygame.font.Font("assetts/fonts/PressStart2P-Regular.ttf", 38)
         font_desc = pygame.font.Font("assetts/fonts/PressStart2P-Regular.ttf", 19)
-        # Nombre
         name_surface = font_title.render(self.characters[idx]["name"], True, (255, 255, 220))
         self.screen.blit(name_surface, (box_x + 200, box_y + 60))
-        # Descripción: formatea multilinea automático
         desc = self.descriptions[idx]
         max_width = box_w - 220 - 30
         words = desc.split()

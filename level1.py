@@ -2,8 +2,9 @@ import pygame
 import os
 from settings import WIDTH, HEIGHT
 
-GROUND_Y = HEIGHT - 100
+GROUND_Y = HEIGHT - 100  # piso
 
+# ------------------ Proyectil ------------------
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
@@ -17,8 +18,10 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.x > WIDTH:
             self.kill()
 
+# ------------------ Enemigo ------------------
 class Enemy:
     def __init__(self):
+        # Usa Walk y Attack
         self.walk_frames = self.load_frames("assetts/images/enemies/Minotaur_1/Walk.png", 64, 64, scale=1.0)
         self.attack_frames = self.load_frames("assetts/images/enemies/Minotaur_1/Attack.png", 64, 64, scale=1.0)
 
@@ -42,6 +45,7 @@ class Enemy:
         if not self.alive:
             return
 
+        # Movimiento hacia el jugador
         if not self.attacking:
             if self.rect.x > player_rect.x + 50:
                 self.rect.x -= 3
@@ -49,6 +53,7 @@ class Enemy:
                 self.attacking = True
                 self.index = 0
 
+        # Animación
         self.index += 0.2
         if self.attacking and self.index >= len(self.attack_frames):
             self.attack_done = True
@@ -65,11 +70,13 @@ class Enemy:
             frame = self.walk_frames[int(self.index)]
         screen.blit(frame, self.rect)
 
+# ------------------ Nivel 1 ------------------
 class LevelOneScreen:
     def __init__(self, screen, player_sprite):
         self.screen = screen
         self.clock = pygame.time.Clock()
 
+        # Fondo animado
         self.background_frames = []
         bg_path = "assetts/images/level1/background"
         for file in sorted(os.listdir(bg_path)):
@@ -81,6 +88,7 @@ class LevelOneScreen:
         self.bg_frame_rate = 8
         self.bg_frame_counter = 0
 
+        # Jugador
         self.player_sprite = player_sprite
         self.player_sprite.frames = [
             pygame.transform.scale(frame, (80, 80)).convert_alpha()
@@ -92,17 +100,22 @@ class LevelOneScreen:
         self.jump_velocity = 0
         self.gravity = 1
 
+        # Disparo
         self.bullets = pygame.sprite.Group()
         self.shoot_sound = pygame.mixer.Sound("assetts/sounds/shoot.wav") if os.path.exists("assetts/sounds/shoot.wav") else None
 
+        # Enemigo
         self.enemy = Enemy()
 
+        # Niebla
         self.fog = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         self.fog.fill((200, 200, 200, 50))
         self.fog_x = -WIDTH
 
+        # Tiempo de nivel
         self.start_ticks = pygame.time.get_ticks()
 
+        # Estado
         self.game_over = False
         self.level_completed = False
         self.font = pygame.font.Font(None, 80)
@@ -129,12 +142,14 @@ class LevelOneScreen:
         if self.game_over or self.level_completed:
             return
 
+        # Movimiento jugador
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] and self.player_rect.left > 0:
             self.player_rect.x -= self.player_speed
         if keys[pygame.K_d] and self.player_rect.right < WIDTH:
             self.player_rect.x += self.player_speed
 
+        # Salto
         if self.is_jumping:
             self.player_rect.y += self.jump_velocity
             self.jump_velocity += self.gravity
@@ -142,10 +157,13 @@ class LevelOneScreen:
                 self.player_rect.bottom = GROUND_Y
                 self.is_jumping = False
 
+        # Balas
         self.bullets.update()
 
+        # Enemigo
         self.enemy.update(self.player_rect)
 
+        # Colisiones
         if self.enemy.alive:
             for bullet in self.bullets:
                 if self.enemy.rect.colliderect(bullet.rect):
@@ -154,15 +172,18 @@ class LevelOneScreen:
             if self.enemy.rect.colliderect(self.player_rect) and self.enemy.attack_done:
                 self.game_over = True
 
+        # Niebla (te persigue)
         self.fog_x += 1
         if self.fog_x >= 0:
             self.fog_x = 0
             self.game_over = True
 
+        # Tiempo del nivel
         seconds = (pygame.time.get_ticks() - self.start_ticks) / 1000
         if seconds >= 30 and not self.game_over:
             self.level_completed = True
 
+        # Fondo animado
         self.bg_frame_counter += 1
         if self.bg_frame_counter >= self.bg_frame_rate:
             self.current_bg_frame = (self.current_bg_frame + 1) % len(self.background_frames)
