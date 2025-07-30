@@ -118,6 +118,7 @@ class LevelOneScreen:
         # Estado
         self.game_over = False
         self.level_completed = False
+        self.level_result = None  # <-- NUEVO (WIN o LOSE)
         self.font = pygame.font.Font(None, 80)
 
     def handle_event(self, event):
@@ -171,17 +172,23 @@ class LevelOneScreen:
                     bullet.kill()
             if self.enemy.rect.colliderect(self.player_rect) and self.enemy.attack_done:
                 self.game_over = True
+                if not self.level_result:
+                    self.level_result = "LOSE"
 
         # Niebla (te persigue)
         self.fog_x += 1
         if self.fog_x >= 0:
             self.fog_x = 0
             self.game_over = True
+            if not self.level_result:
+                self.level_result = "LOSE"
 
-        # Tiempo del nivel
+        # Tiempo del nivel (30s = victoria)
         seconds = (pygame.time.get_ticks() - self.start_ticks) / 1000
         if seconds >= 30 and not self.game_over:
             self.level_completed = True
+            if not self.level_result:
+                self.level_result = "WIN"
 
         # Fondo animado
         self.bg_frame_counter += 1
