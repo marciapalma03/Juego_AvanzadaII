@@ -15,7 +15,7 @@ class PopupButton:
         self.rect = self.base_rect.copy()
         self.sound_hover = sound_hover
         self.sound_click = sound_click
-        self.font = pygame.font.Font("assetts/fonts/PressStart2P-Regular.ttf", 22)
+        self.font = pygame.font.Font("assets/fonts/PressStart2P-Regular.ttf", 22)
         self.base_color = (220, 220, 160)
         self.edge_color = (130, 130, 90)
         self.text_color = (0, 0, 0)
@@ -62,33 +62,33 @@ class PopupButton:
 class CharacterSelectScreen:
     def __init__(self, screen):
         self.screen = screen
-        self.bg = Background("assetts/images/backgrounds/frames/", fps=10)
+        self.bg = Background("assets/images/backgrounds/frames/", fps=10)
         self.blur_scale = 0.18
 
-        click_sound = pygame.mixer.Sound(os.path.join("assetts/sounds/click.mp3"))
-        hover_sound = pygame.mixer.Sound(os.path.join("assetts/sounds/hover.mp3"))
+        click_sound = pygame.mixer.Sound(os.path.join("assets/sounds/click.mp3"))
+        hover_sound = pygame.mixer.Sound(os.path.join("assets/sounds/seleccion.mp3"))
         margin = 40
         btn_width, btn_height = 250, 75
         self.btn_volver = StoneButton("VOLVER", (margin, HEIGHT - btn_height - margin), (btn_width, btn_height), click_sound)
 
         self.characters = [
             {
-                "name": "YAMATO",
-                "sprite": CharacterSprite("assetts/images/characters/yamato/idle.png", 200, 200, 4, fps=8, scale=4),
+                "name": "MINATO",
+                "sprite": CharacterSprite("assets/images/characters/minato/Idle.png", 128, 128, 6, fps=8, scale=4),
             },
             {
-                "name": "KIZAME",
-                "sprite": CharacterSprite("assetts/images/characters/kizame/idle.png", 100, 100, 10, fps=8, scale=4),
+                "name": "MAKI",
+                "sprite": CharacterSprite("assets/images/characters/maki/Idle.png", 128, 128, 6, fps=8, scale=4),
             },
             {
-                "name": "RIN",
-                "sprite": CharacterSprite("assetts/images/characters/rin/idle.png", 150, 150, 8, fps=8, scale=4),
+                "name": "TANJIRO",
+                "sprite": CharacterSprite("assets/images/characters/tanjiro/Idle.png", 128, 128, 6, fps=8, scale=4),
             },
         ]
         self.descriptions = [
-            "Guerrero equilibrado con alta defensa y ataque cuerpo a cuerpo.",
-            "Arquero ágil, ataques a distancia y gran velocidad.",
-            "Maga con hechizos de área, defensa baja pero gran daño."
+            "Guerrero agil con una gran habilidad para el combate cuerpo a cuerpo.",
+            "Guerrera valiente, experta en ataques a distancia y gran velocidad.",
+            "Guerrero noble, con defensa baja pero capaz de detectar el peligro."
         ]
 
         sprites = [char["sprite"] for char in self.characters]
@@ -133,19 +133,31 @@ class CharacterSelectScreen:
         if self.selected_index is not None:
             box_w, box_h = 560, 340
             box_x, box_y = WIDTH // 2 - box_w // 2, HEIGHT // 2 - box_h // 2
-            btn_w, btn_h = 120, 36
-            select_w = 170
+            btn_h = 36
             btn_margin = 24
+
+            # --- FIX: ancho dinámico de ambos botones ---
+            font_temp = pygame.font.Font("assets/fonts/PressStart2P-Regular.ttf", 22)
+            close_w = font_temp.size("CERRAR")[0] + 40
+            select_w = font_temp.size("SELECCIONAR")[0] + 40
+
             close_btn_pos = (box_x + btn_margin, box_y + box_h - btn_h - btn_margin)
             select_btn_pos = (box_x + box_w - select_w - btn_margin, box_y + box_h - btn_h - btn_margin)
+
             if not self.close_btn or not self.select_btn:
-                self.close_btn = PopupButton("CERRAR", close_btn_pos, (btn_w, btn_h), self.popup_hover_sound, self.popup_click_sound)
-                self.select_btn = PopupButton("SELECCIONAR", select_btn_pos, (select_w, btn_h), self.popup_hover_sound, self.popup_click_sound)
+                self.close_btn = PopupButton("CERRAR", close_btn_pos, (close_w, btn_h),
+                                             self.popup_hover_sound, self.popup_click_sound)
+                self.select_btn = PopupButton("SELECCIONAR", select_btn_pos, (select_w, btn_h),
+                                              self.popup_hover_sound, self.popup_click_sound)
             else:
+                self.close_btn.base_rect.size = (close_w, btn_h)
                 self.close_btn.base_rect.topleft = close_btn_pos
                 self.close_btn.rect = self.close_btn.base_rect.copy()
+
+                self.select_btn.base_rect.size = (select_w, btn_h)
                 self.select_btn.base_rect.topleft = select_btn_pos
                 self.select_btn.rect = self.select_btn.base_rect.copy()
+
             self.close_btn.update(mouse_pos)
             self.select_btn.update(mouse_pos)
 
@@ -159,7 +171,6 @@ class CharacterSelectScreen:
                 self.close_btn.clicked = False
             elif self.select_btn.clicked:
                 print("Seleccionaste el personaje:", self.characters[self.selected_index]["name"])
-                # -------- NUEVO: guardar personaje elegido --------
                 self.selected_character = self.characters[self.selected_index]["name"]
                 self.selected_index = None
                 self.select_btn.clicked = False
@@ -174,7 +185,7 @@ class CharacterSelectScreen:
         blur = pygame.transform.smoothscale(blur, (WIDTH, HEIGHT))
         self.screen.blit(blur, (0, 0))
 
-        font = pygame.font.Font("assetts/fonts/PressStart2P-Regular.ttf", 48)
+        font = pygame.font.Font("assets/fonts/PressStart2P-Regular.ttf", 48)
         txt = font.render("SELECCION DE PERSONAJE", True, (255, 255, 230))
         self.screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, 80))
 
@@ -190,22 +201,18 @@ class CharacterSelectScreen:
             self.draw_character_popup(self.selected_index)
 
     def draw_character_popup(self, idx):
-        # Fondo transparente
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 160))
         self.screen.blit(overlay, (0, 0))
-        # Recuadro
         box_w, box_h = 560, 340
         box_x, box_y = WIDTH // 2 - box_w // 2, HEIGHT // 2 - box_h // 2
         pygame.draw.rect(self.screen, (40, 40, 60), (box_x, box_y, box_w, box_h), border_radius=30)
         pygame.draw.rect(self.screen, (200, 200, 255), (box_x, box_y, box_w, box_h), 4, border_radius=30)
-        # Sprite del personaje
         sprite = self.characters[idx]["sprite"].frames[0]
         sprite_big = pygame.transform.smoothscale(sprite, (110, 110))
         self.screen.blit(sprite_big, (box_x + 40, box_y + 80))
-        # Nombre y descripción
-        font_title = pygame.font.Font("assetts/fonts/PressStart2P-Regular.ttf", 38)
-        font_desc = pygame.font.Font("assetts/fonts/PressStart2P-Regular.ttf", 19)
+        font_title = pygame.font.Font("assets/fonts/PressStart2P-Regular.ttf", 38)
+        font_desc = pygame.font.Font("assets/fonts/PressStart2P-Regular.ttf", 19)
         name_surface = font_title.render(self.characters[idx]["name"], True, (255, 255, 220))
         self.screen.blit(name_surface, (box_x + 200, box_y + 60))
         desc = self.descriptions[idx]
@@ -224,6 +231,5 @@ class CharacterSelectScreen:
         for i, line in enumerate(lines):
             line_surface = font_desc.render(line, True, (255, 255, 220))
             self.screen.blit(line_surface, (box_x + 200, box_y + 110 + i * 27))
-        # Botones
         self.close_btn.draw(self.screen)
         self.select_btn.draw(self.screen)

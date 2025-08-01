@@ -4,15 +4,15 @@ from settings import WIDTH, HEIGHT, FPS
 from menu import MainMenu
 from character_select import CharacterSelectScreen
 from level1 import LevelOneScreen
-from level2 import LevelTwoScreen  # nuevo nivel 2
+from level2 import LevelTwoScreen
+from level3 import LevelThreeScreen  # Nivel 3
 
 pygame.init()
 pygame.mixer.init()
 
-pygame.mixer.music.load("assetts/music/musicainicio.mp3")
+pygame.mixer.music.load("assets/music/musicainicio.mp3")
 pygame.mixer.music.set_volume(0.7)
 pygame.mixer.music.play(-1)
-
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Mi Juego")
 clock = pygame.time.Clock()
@@ -21,6 +21,7 @@ menu = MainMenu(screen)
 personajes_screen = CharacterSelectScreen(screen)
 level1_screen = None
 level2_screen = None
+level3_screen = None
 selected_character_sprite = None
 
 state = "MENU"
@@ -31,6 +32,7 @@ while True:
             pygame.quit()
             sys.exit()
 
+        # ---- MENÚ PRINCIPAL ----
         if state == "MENU":
             menu.handle_event(event)
             if menu.btn_personajes.clicked:
@@ -45,6 +47,7 @@ while True:
                     state = "NIVEL1"
                     level1_screen = LevelOneScreen(screen, selected_character_sprite)
 
+        # ---- PANTALLA DE SELECCIÓN ----
         elif state == "PERSONAJES":
             personajes_screen.handle_event(event)
             if personajes_screen.selected_index is not None:
@@ -55,12 +58,31 @@ while True:
                 state = "MENU"
                 personajes_screen.btn_volver.clicked = False
 
+        # ---- NIVEL 1 ----
         elif state == "NIVEL1" and level1_screen:
-            level1_screen.handle_event(event)
+            action = level1_screen.handle_event(event)
+            if action == "RETRY":
+                level1_screen = LevelOneScreen(screen, selected_character_sprite)
+            elif action == "MENU":
+                state = "MENU"
 
+        # ---- NIVEL 2 ----
         elif state == "NIVEL2" and level2_screen:
-            level2_screen.handle_event(event)
+            action = level2_screen.handle_event(event)
+            if action == "RETRY":
+                level2_screen = LevelTwoScreen(screen, selected_character_sprite)
+            elif action == "MENU":
+                state = "MENU"
 
+        # ---- NIVEL 3 ----
+        elif state == "NIVEL3" and level3_screen:
+            action = level3_screen.handle_event(event)
+            if action == "RETRY":
+                level3_screen = LevelThreeScreen(screen, selected_character_sprite)
+            elif action == "MENU":
+                state = "MENU"
+
+    # --- Dibujo y actualización de estados ---
     if state == "MENU":
         menu.update()
         menu.draw()
@@ -79,6 +101,16 @@ while True:
     elif state == "NIVEL2" and level2_screen:
         result = level2_screen.update()
         level2_screen.draw()
+        if result is None and getattr(level2_screen, "completed", False):
+            state = "NIVEL3"
+            level3_screen = LevelThreeScreen(screen, selected_character_sprite)
+
+    elif state == "NIVEL3" and level3_screen:
+        result = level3_screen.update()
+        level3_screen.draw()
+        # Si el nivel 3 termina con éxito podrías manejar transición final aquí
+        # if getattr(level3_screen, "completed", False):
+        #     state = "MENU"
 
     pygame.display.flip()
     clock.tick(FPS)

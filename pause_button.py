@@ -2,7 +2,7 @@ import pygame
 
 class PauseButton:
     def __init__(self, pos, size, sound_click):
-        self.image = pygame.image.load("assetts/images/ui/pause_icon.png").convert_alpha()
+        self.image = pygame.image.load("assets/images/ui/pause_icon.png").convert_alpha()
         self.image = pygame.transform.smoothscale(self.image, size)
         self.rect = pygame.Rect(pos, size)
         self.hovered = False

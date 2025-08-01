@@ -7,15 +7,15 @@ from settings import WIDTH, HEIGHT
 class MainMenu:
     def __init__(self, screen):
         self.screen = screen
-        self.bg = Background("assetts/images/backgrounds/frames/", fps=10)
+        self.bg = Background("assets/images/backgrounds/frames/", fps=10)
 
         # Fuentes para el título
-        font_path = "assetts/fonts/PressStart2P-Regular.ttf"
+        font_path = "assets/fonts/PressStart2P-Regular.ttf"
         self.title_font = pygame.font.Font(font_path, 80)
         self.mist_font = pygame.font.Font(font_path, 160)
 
         # Sonido de click
-        click_sound = pygame.mixer.Sound(os.path.join("assetts/sounds/click.mp3"))
+        click_sound = pygame.mixer.Sound(os.path.join("assets/sounds/click.mp3"))
 
         margin = 40
         btn_width, btn_height = 340, 75

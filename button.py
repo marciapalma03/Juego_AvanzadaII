@@ -10,7 +10,7 @@ class StoneButton:
         self.rect = self.base_rect.copy()
         self.hovered = False
         self.clicked = False
-        self.font = pygame.font.Font("assetts/fonts/PressStart2P-Regular.ttf", 32)
+        self.font = pygame.font.Font("assets/fonts/PressStart2P-Regular.ttf", 32)
         self.base_color = (110, 110, 110)
         self.edge_color = (70, 70, 70)
         self.text_color = (255, 255, 210)
