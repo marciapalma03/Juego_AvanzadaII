@@ -13,6 +13,7 @@ pygame.mixer.init()
 pygame.mixer.music.load("assets/music/musicainicio.mp3")
 pygame.mixer.music.set_volume(0.7)
 pygame.mixer.music.play(-1)
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Mi Juego")
 clock = pygame.time.Clock()
@@ -101,7 +102,7 @@ while True:
     elif state == "NIVEL2" and level2_screen:
         result = level2_screen.update()
         level2_screen.draw()
-        if result is None and getattr(level2_screen, "completed", False):
+        if result == "NEXT_LEVEL":
             state = "NIVEL3"
             level3_screen = LevelThreeScreen(screen, selected_character_sprite)
 

@@ -20,8 +20,12 @@ class Bullet(pygame.sprite.Sprite):
 class Goal(pygame.sprite.Sprite):
     def __init__(self, x):
         super().__init__()
-        self.image = pygame.Surface((40, 100))
-        self.image.fill((0, 255, 0))
+        image_path = os.path.join("assets/images/icons/final/50.png")
+        self.image = pygame.image.load(image_path).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (120, 120))
+        mask = pygame.Surface((120, 120), pygame.SRCALPHA)
+        pygame.draw.ellipse(mask, (255, 255, 255, 255), mask.get_rect())
+        self.image.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
         self.rect = self.image.get_rect(midbottom=(x, GROUND_Y))
 
 class Enemy:
@@ -31,15 +35,14 @@ class Enemy:
         self.attack_frames = self.load_frames(os.path.join(base_path, "Attack_1.png"), 64, 64, scale=2.0)
         self.dead_frames = self.load_frames(os.path.join(base_path, "Dead.png"), 64, 64, scale=2.0)
 
-        self.rect = self.walk_frames[0].get_rect()
         self.index = 0
         self.attacking = False
         self.dying = False
         self.alive = True
-        self.attack_done = False
-        self.current_action = "Walk"
         self.max_health = 5
         self.health = self.max_health
+        self.rect = self.walk_frames[0].get_rect(midbottom=(WIDTH - 200, GROUND_Y))
+        self.current_frame = self.walk_frames[0]
 
     def load_frames(self, path, fw, fh, scale=1):
         sheet = pygame.image.load(path).convert_alpha()
@@ -48,46 +51,36 @@ class Enemy:
         for y in range(0, sh, fh):
             for x in range(0, sw, fw):
                 frame = sheet.subsurface((x, y, fw, fh))
-                frame = pygame.transform.scale(frame, (int(fw*scale), int(fh*scale)))
+                frame = pygame.transform.scale(frame, (int(fw * scale), int(fh * scale)))
                 frames.append(frame)
         return frames
 
     def update(self, player_rect):
         if not self.alive:
             return
+
         if self.dying:
-            self.index += 0.2
+            self.index += 0.15
             if self.index >= len(self.dead_frames):
                 self.alive = False
+            else:
+                self.current_frame = self.dead_frames[int(self.index)]
             return
 
-        # Movimiento y ataque
-        if self.current_action == "Walk":
-            if abs(self.rect.centerx - player_rect.centerx) < 200:
-                self.attacking = True
-                self.index = 0
-            else:
-                if self.rect.x > player_rect.x + 50:
-                    self.rect.x -= 3
+        if self.rect.x > player_rect.x + 50:
+            self.rect.x -= 3
 
+        self.attacking = abs(self.rect.centerx - player_rect.centerx) < 200
         self.index += 0.2
         if self.attacking:
-            if self.index >= len(self.attack_frames):
-                self.index = len(self.attack_frames) - 1
+            self.current_frame = self.attack_frames[int(self.index) % len(self.attack_frames)]
         else:
-            if self.index >= len(self.walk_frames):
-                self.index = 0
+            self.current_frame = self.walk_frames[int(self.index) % len(self.walk_frames)]
 
     def draw(self, screen):
         if not self.alive:
             return
-        if self.dying:
-            frame = self.dead_frames[int(self.index)]
-        elif self.attacking:
-            frame = self.attack_frames[int(self.index)]
-        else:
-            frame = self.walk_frames[int(self.index)]
-        screen.blit(frame, self.rect)
+        screen.blit(self.current_frame, self.rect)
         if not self.dying:
             bar_w = self.rect.width
             ratio = self.health / self.max_health
@@ -101,15 +94,13 @@ class LevelOneScreen:
         self.screen = screen
         self.clock = pygame.time.Clock()
 
-        # ---- FONDO ESTÁTICO ----
         bg_path = "assets/images/level1/Cartoon_Forest_BG_03.png"
         self.background = pygame.image.load(bg_path).convert()
         self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
 
         self.player_sprite = player_sprite
-        # Crear copia escalada sin modificar los frames originales
         self.player_frames = [
-            pygame.transform.scale(f, (100, 100)).convert_alpha()
+            pygame.transform.scale(f, (150, 150)).convert_alpha()
             for f in player_sprite.frames
         ]
         self.player_rect = self.player_frames[0].get_rect(midbottom=(100, GROUND_Y))
@@ -121,11 +112,17 @@ class LevelOneScreen:
         snd_path = "assets/sounds/shoot.wav"
         self.shoot_sound = pygame.mixer.Sound(snd_path) if os.path.exists(snd_path) else None
         self.enemy = Enemy()
-        self.enemy.rect.midbottom = (WIDTH - 200, GROUND_Y)
         self.goal = Goal(WIDTH - 50)
         self.game_over = False
         self.level_completed = False
-        self.font = pygame.font.Font(None, 80)
+
+        # === FUENTE PERSONALIZADA ===
+        font_path = "assets/fonts/PressStart2P-Regular.ttf"
+        self.font = pygame.font.Font(font_path, 60)
+        self.small_font = pygame.font.Font(font_path, 30)
+
+        # === NUEVO: temporizador para la transición ===
+        self.completed_timer = 0
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -148,8 +145,13 @@ class LevelOneScreen:
     def update(self):
         if self.game_over:
             return None
+
+        # Si el nivel ya está completado, aumentar contador y esperar 3 segundos (180 frames a 60FPS)
         if self.level_completed:
-            return "NEXT_LEVEL"
+            self.completed_timer += 1
+            if self.completed_timer > 180:
+                return "NEXT_LEVEL"
+            return None
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a] and self.player_rect.left > 0:
@@ -168,7 +170,6 @@ class LevelOneScreen:
         self.bullets.update()
         self.enemy.update(self.player_rect)
 
-        # Colisiones con balas
         if self.enemy.alive and not self.enemy.dying:
             for b in self.bullets:
                 if self.enemy.rect.colliderect(b.rect):
@@ -178,26 +179,23 @@ class LevelOneScreen:
                         self.enemy.dying = True
                         self.enemy.index = 0
 
-        # Colisión directa con el enemigo
         if self.enemy.alive and not self.enemy.dying:
             if self.player_rect.colliderect(self.enemy.rect):
-                # Saltar sobre el enemigo
                 if self.player_rect.bottom <= self.enemy.rect.top + 10 and self.jump_velocity > 0:
                     self.is_jumping = True
                     self.jump_velocity = -12
                 else:
-                    # Solo perder si el enemigo está atacando activamente
                     if self.enemy.attacking:
                         self.game_over = True
 
-        # ---- Condición de victoria ----
         if not self.enemy.alive and self.player_rect.colliderect(self.goal.rect):
             self.level_completed = True
+            self.completed_timer = 0
         return None
 
     def draw(self):
         self.screen.fill((0, 0, 0))
-        self.screen.blit(self.background, (0, 0))  # <-- Fondo estático
+        self.screen.blit(self.background, (0, 0))
         self.bullets.draw(self.screen)
         self.enemy.draw(self.screen)
         self.screen.blit(self.goal.image, self.goal.rect)
@@ -205,13 +203,12 @@ class LevelOneScreen:
         self.screen.blit(frame, self.player_rect)
 
         if self.game_over:
-            msg = self.font.render("GAME OVER", True, (180, 0, 0))
-            self.screen.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT//2))
-            retry_msg = pygame.font.Font(None, 40).render("Presiona 'R' para Reintentar", True, (255, 255, 255))
-            menu_msg = pygame.font.Font(None, 40).render("Presiona 'M' para volver al menú", True, (255, 255, 255))
-            self.screen.blit(retry_msg, (WIDTH//2 - retry_msg.get_width()//2, HEIGHT//2 + 80))
-            self.screen.blit(menu_msg, (WIDTH//2 - menu_msg.get_width()//2, HEIGHT//2 + 120))
+            msg = self.font.render("GAME OVER", True, (255, 0, 0))
+            self.screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2))
+            retry_msg = self.small_font.render("Presiona 'R' para Reintentar", True, (255, 255, 255))
+            menu_msg = self.small_font.render("Presiona 'M' para volver al menú", True, (255, 255, 255))
+            self.screen.blit(retry_msg, (WIDTH // 2 - retry_msg.get_width() // 2, HEIGHT // 2 + 80))
+            self.screen.blit(menu_msg, (WIDTH // 2 - menu_msg.get_width() // 2, HEIGHT // 2 + 120))
         elif self.level_completed:
-            fancy_font = pygame.font.Font("assets/fonts/PressStart2P-Regular.ttf", 60)
-            msg = fancy_font.render("NIVEL COMPLETADO", True, (0, 255, 0))
-            self.screen.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT//2 - 50))
+            msg = self.font.render("NIVEL COMPLETADO", True, (0, 255, 0))
+            self.screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - 50))

@@ -15,7 +15,7 @@ class MainMenu:
         self.mist_font = pygame.font.Font(font_path, 160)
 
         # Sonido de click
-        click_sound = pygame.mixer.Sound(os.path.join("assets/sounds/click.mp3"))
+        click_sound = pygame.mixer.Sound(os.path.join("assets/sounds/clicks.mp3"))
 
         margin = 40
         btn_width, btn_height = 340, 75

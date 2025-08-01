@@ -65,7 +65,7 @@ class CharacterSelectScreen:
         self.bg = Background("assets/images/backgrounds/frames/", fps=10)
         self.blur_scale = 0.18
 
-        click_sound = pygame.mixer.Sound(os.path.join("assets/sounds/click.mp3"))
+        click_sound = pygame.mixer.Sound(os.path.join("assets/sounds/clicks.mp3"))
         hover_sound = pygame.mixer.Sound(os.path.join("assets/sounds/seleccion.mp3"))
         margin = 40
         btn_width, btn_height = 250, 75
